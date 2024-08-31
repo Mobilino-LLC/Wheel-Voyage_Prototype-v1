@@ -1,18 +1,16 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO.Ports;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
 
-public class Player : MonoBehaviour
-{
+public class Player : MonoBehaviour {
     public float speed = 5f;
     public float rotationSpeed = 100f;
     public float uprightThreshold = 0.5f;
     public float uprightSpeed = 2.0f;
-    public string command = "prctInit";
 
     private Rigidbody rb;
     private SerialPort serialPort = new SerialPort("COM5", 9600);
@@ -72,6 +70,17 @@ public class Player : MonoBehaviour
             Upright();
         }
     }
+    
+    // Serial Button Click Event
+    void OnSerialBtnClick() {
+        string inputValue = serialInput.text;
+
+        if (!string.IsNullOrEmpty(inputValue)) {
+            sendDataSerial(inputValue);
+        }
+
+        serialInput.text = "";
+    }
 
     bool IsTippedOver() {
         return Mathf.Abs(transform.up.z) < uprightThreshold;
@@ -80,20 +89,6 @@ public class Player : MonoBehaviour
     void Upright() {
         Quaternion targetRotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * uprightSpeed);
-    }
-
-    void OnSerialBtnClick() {
-        string inputValue = serialInput.text;
-        // string inputValue = command;
-
-        if (!string.IsNullOrEmpty(inputValue)) {
-            sendDataSerial(inputValue);
-        }
-        else {
-            Debug.LogWarning("Input value is empty.");
-        }
-
-        serialInput.text = "";
     }
 
     void sendDataSerial(string sendData) {
@@ -140,8 +135,7 @@ public class Player : MonoBehaviour
     }
 
     void OnApplicationQuit() {
-        if (serialPort.IsOpen) {
+        if (serialPort.IsOpen)
             serialPort.Close();
-        }
     }
 }
