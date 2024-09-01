@@ -20,16 +20,13 @@ public class Player : MonoBehaviour {
     private Text m1Text;
     private Text m2Text;
     private InputField serialInput;
-    private Button serialBtn;
 
     void Awake() {
         rb = GetComponent<Rigidbody>();
         m1Text = GameObject.Find("M1VAL").GetComponent<Text>();
         m2Text = GameObject.Find("M2VAL").GetComponent<Text>();
         serialInput = GameObject.Find("SerialInput").GetComponent<InputField>();
-        serialBtn = GameObject.Find("SerialBtn").GetComponent<Button>();
-
-        serialBtn.onClick.AddListener(OnSerialBtnClick);
+        serialInput.onEndEdit.AddListener(OnSerialInputEndEdit);
 
         BoxCollider boxCollider = GetComponent<BoxCollider>();
         if (boxCollider != null) {
@@ -53,7 +50,8 @@ public class Player : MonoBehaviour {
                 string dataString = serialPort.ReadLine();
                 ParseSerialData(dataString);
             }
-            catch (System.Exception e) {
+            catch (System.Exception) {
+                // catch (System.Exception e) {
                 // Debug.LogWarning("Failed to read serial data: " + e.Message);
             }
         }
@@ -70,16 +68,15 @@ public class Player : MonoBehaviour {
             Upright();
         }
     }
-    
-    // Serial Button Click Event
-    void OnSerialBtnClick() {
-        string inputValue = serialInput.text;
 
-        if (!string.IsNullOrEmpty(inputValue)) {
-            sendDataSerial(inputValue);
+    void OnSerialInputEndEdit(string inputValue) {
+        if (Input.GetKeyDown(KeyCode.Return)) {
+            if (!string.IsNullOrEmpty(inputValue)) {
+                sendDataSerial(inputValue);
+            }
+
+            serialInput.text = "";
         }
-
-        serialInput.text = "";
     }
 
     bool IsTippedOver() {
@@ -107,6 +104,8 @@ public class Player : MonoBehaviour {
     }
 
     void ParseSerialData(string dataString) {
+        int backward_val = 1;
+        int forward_val = 5;
         try {
             JObject json = JObject.Parse(dataString);
             leftWheelValue = json.ContainsKey("M1VAL") ? (float)json["M1VAL"] : 0.0f;
@@ -119,15 +118,21 @@ public class Player : MonoBehaviour {
             m1Text.text = "M1: " + leftWheelValue.ToString();
             m2Text.text = "M2: " + rightWheelValue.ToString();
 
-            if (leftWheelValue <= 3)
+            if (leftWheelValue <= backward_val) {
+                leftWheelValue -= backward_val;
+            } else if (leftWheelValue > backward_val && leftWheelValue < forward_val) {
                 leftWheelValue = 0;
-            else
-                leftWheelValue -= 3;
+            } else {
+                leftWheelValue -= forward_val;
+            }
 
-            if (rightWheelValue <= 3)
+            if (rightWheelValue <= backward_val) {
+                rightWheelValue -= backward_val;
+            } else if (rightWheelValue > backward_val && rightWheelValue < forward_val) {
                 rightWheelValue = 0;
-            else
-                rightWheelValue -= 3;
+            } else {
+                rightWheelValue -= forward_val;
+            }
         }
         catch (System.Exception e) {
             Debug.LogWarning("Failed to parse serial data: " + e.Message);
