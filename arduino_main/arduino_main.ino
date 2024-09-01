@@ -14,10 +14,10 @@ String receivedMessage = "";
 #define PRCTINITCMD "prctInit"
 void prctInit() {
   Serial.print("{\"M1VAL\":");
-  Serial.print(0);
+  Serial.print(2);
   Serial.print(",");
   Serial.print("\"M2VAL\":");
-  Serial.print(0);
+  Serial.print(2);
   Serial.print("}");
   delay(100);
   digitalWrite(RST_PIN, LOW); 
