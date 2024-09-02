@@ -355,9 +355,8 @@
 -analyzer:"C:/Program Files/Unity/Hub/Editor/2022.3.4f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll"
 "Assets/script/DistanceBasedPitch.cs"
 "Assets/script/MainCameraAction.cs"
-"Assets/script/Move.cs"
+"Assets/script/MoveController.cs"
 "Assets/script/Player.cs"
-"Assets/script/VelocityCalculator.cs"
 -langversion:9.0
 
 /deterministic

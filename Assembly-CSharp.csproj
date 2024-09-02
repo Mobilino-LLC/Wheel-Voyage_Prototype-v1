@@ -41,10 +41,9 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\script\DistanceBasedPitch.cs" />
-     <Compile Include="Assets\script\VelocityCalculator.cs" />
      <Compile Include="Assets\script\Player.cs" />
+     <Compile Include="Assets\script\MoveController.cs" />
      <Compile Include="Assets\script\MainCameraAction.cs" />
-     <Compile Include="Assets\script\Move.cs" />
      <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />

@@ -19,12 +19,14 @@ public class Player : MonoBehaviour {
 
     private Text m1Text;
     private Text m2Text;
+    private Text serialIsConnected;
     private InputField serialInput;
 
     void Awake() {
         rb = GetComponent<Rigidbody>();
         m1Text = GameObject.Find("M1VAL").GetComponent<Text>();
         m2Text = GameObject.Find("M2VAL").GetComponent<Text>();
+        serialIsConnected = GameObject.Find("SerialIsConnected").GetComponent<Text>();
         serialInput = GameObject.Find("SerialInput").GetComponent<InputField>();
         serialInput.onEndEdit.AddListener(OnSerialInputEndEdit);
 
@@ -40,21 +42,11 @@ public class Player : MonoBehaviour {
     }
 
     void Start() {
-        serialPort.Open();
-        serialPort.ReadTimeout = 100;
+        SerialConnect();
     }
 
     void Update() {
-        if (serialPort.IsOpen) {
-            try {
-                string dataString = serialPort.ReadLine();
-                ParseSerialData(dataString);
-            }
-            catch (System.Exception) {
-                // catch (System.Exception e) {
-                // Debug.LogWarning("Failed to read serial data: " + e.Message);
-            }
-        }
+        SerialConnect();
     }
 
     void FixedUpdate() {
@@ -67,6 +59,22 @@ public class Player : MonoBehaviour {
         if (IsTippedOver()) {
             Upright();
         }
+    }
+
+    void SerialConnect() {
+        try {
+            serialPort.Open();
+            serialIsConnected.text = "Serial is connected";
+            serialIsConnected.color = Color.green;
+            serialInput.interactable = true;
+        }
+        catch (System.Exception) {
+            serialIsConnected.text = "Serial is not connected";
+            serialIsConnected.color = Color.red;
+            serialInput.interactable = false;
+        }
+
+        serialPort.ReadTimeout = 10;
     }
 
     void OnSerialInputEndEdit(string inputValue) {
@@ -89,23 +97,28 @@ public class Player : MonoBehaviour {
     }
 
     void sendDataSerial(string sendData) {
-        if (serialPort.IsOpen && !string.IsNullOrEmpty(sendData)) {
-            try {
-                serialPort.Write(sendData);
-                Debug.Log("Sent to serial: " + sendData);
-            }
-            catch (System.Exception e) {
-                Debug.LogError("Failed to send data to serial port: " + e.Message);
-            }
+        if (string.IsNullOrEmpty(sendData)) {
+            Debug.LogWarning("input value is empty.");
+            return;
         }
-        else {
-            Debug.LogWarning("Serial port not open or input value is empty.");
+
+        if (serialPort.IsOpen == false) {
+            Debug.LogWarning("Serial port is not open.");
+            return;
+        }
+
+        try {
+            serialPort.Write(sendData);
+            Debug.Log("Sent to serial: " + sendData);
+        }
+        catch (System.Exception e) {
+            Debug.LogError("Failed to send data to serial port: " + e.Message);
         }
     }
 
     void ParseSerialData(string dataString) {
-        int backward_val = 1;
-        int forward_val = 5;
+        int backward_val = -1;
+        int forward_val = 3;
         try {
             JObject json = JObject.Parse(dataString);
             leftWheelValue = json.ContainsKey("M1VAL") ? (float)json["M1VAL"] : 0.0f;
