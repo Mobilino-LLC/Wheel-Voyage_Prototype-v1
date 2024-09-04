@@ -1,12 +1,17 @@
 #include <LiquidCrystal_I2C.h>
 
+#define PRCT_MODEL "WVP1"
+
+#define SERIAL_BAUD 230400
 #define RST_PIN 12
 #define ANA_PIN_1 A0
 #define ANA_PIN_2 A1
 #define IN_VOLTAGE 5
 
-LiquidCrystal_I2C display(0x3F, 16, 2);
+LiquidCrystal_I2C Display(0x3F, 16, 2);
 
+
+bool is_savemode = false;
 float voltage_1;
 float voltage_2;
 String receivedMessage = "";
@@ -19,26 +24,54 @@ void prctInit() {
   Serial.print("\"M2VAL\":");
   Serial.print(2);
   Serial.print("}");
-  delay(100);
+  delay(1000);
   digitalWrite(RST_PIN, LOW); 
 }
 
-#define DISPLAYINIT "displayInit"
-void displayInit() {
-  Serial.begin(9600);
-  display.init();
-  display.backlight();
-
-  display.setCursor(0, 0);
-  display.print("Wheel Voyage");
-  display.setCursor(0, 1);
-  display.print("Prototype v1");
+#define PRCTINFOCMD "prctInfo"
+void prctInfo() {
+  Serial.print("{\"MODEL\":\"");
+  Serial.print(PRCT_MODEL);
+  Serial.print("\"}");
 }
 
-#define DISPLAYCLEAR "displayClear"
+#define PRCTSAVEMODECMD "prctSave"
+void prctSavemode() {
+  is_savemode = true;
+
+  Serial.print("{\"M1VAL\":");
+  Serial.print(2);
+  Serial.print(",");
+  Serial.print("\"M2VAL\":");
+  Serial.print(2);
+  Serial.print("}");
+
+  Display.noDisplay();
+  Display.noBacklight();
+  Display.off();
+}
+
+#define PRCTNORMALMODECMD "prctNormal"
+void prctNormalmode() {
+  is_savemode = false;
+
+  displayInit();
+}
+
+#define DISPLAYINITCMD "displayInit"
+void displayInit() {
+  Display.init();
+  Display.backlight();
+  Display.setCursor(0, 0);
+  Display.print("Wheel Voyage");
+  Display.setCursor(0, 1);
+  Display.print("Prototype v1");
+}
+
+#define DISPLAYCLEARCMD "displayClear"
 void displayClear() {
-  display.clear();
-  display.setCursor(0, 0);
+  Display.clear();
+  Display.setCursor(0, 0);
 }
 
 void setup() {
@@ -47,9 +80,12 @@ void setup() {
   pinMode(ANA_PIN_1, INPUT);
   pinMode(ANA_PIN_2, INPUT);
 
+  Serial.begin(SERIAL_BAUD);
   displayInit();
 }
 
+int last_work_time = 0;
+int last_work_timeout = 1000;
 void loop() {
   if (Serial.available() > 0) {
     String receivedMessage = Serial.readStringUntil('\n'); 
@@ -58,41 +94,52 @@ void loop() {
     Serial.print(receivedMessage);
     Serial.println("\"}");
 
-    display.clear();
-    display.setCursor(0, 0);
+    Display.clear();
+    Display.setCursor(0, 0);
 
     // print receive message
     if (receivedMessage.length() <= 16) {
-      display.print(receivedMessage);
+      Display.print(receivedMessage);
     } else {
-      display.print(receivedMessage.substring(0, 16));
-      display.setCursor(0, 1);
-      display.print(receivedMessage.substring(16));
+      Display.print(receivedMessage.substring(0, 16));
+      Display.setCursor(0, 1);
+      Display.print(receivedMessage.substring(16));
     }
 
     // func command
     if (receivedMessage == PRCTINITCMD)
       prctInit();
 
-    if (receivedMessage == DISPLAYINIT)
+    if (receivedMessage == DISPLAYINITCMD)
       displayInit();
 
-    if (receivedMessage == DISPLAYCLEAR)
+    if (receivedMessage == DISPLAYCLEARCMD)
       displayClear();
+
+    if (receivedMessage == PRCTSAVEMODECMD)
+      prctSavemode();
+    
+    if (receivedMessage == PRCTNORMALMODECMD)
+      prctNormalmode();
 
     receivedMessage = "";
   }
 
-  voltage_1 = analogRead(ANA_PIN_1) * IN_VOLTAGE * 0.00489;
-  voltage_2 = analogRead(ANA_PIN_2) * IN_VOLTAGE * 0.00489;
+  if (!is_savemode) {
+    voltage_1 = analogRead(ANA_PIN_1) * IN_VOLTAGE * 0.00489;
+    voltage_2 = analogRead(ANA_PIN_2) * IN_VOLTAGE * 0.00489;
 
-  Serial.print("{\"M1VAL\":");
-  Serial.print(voltage_1);
-  Serial.print(",");
-  Serial.print("\"M2VAL\":");
-  Serial.print(voltage_2);
-  Serial.print("}");
+    Serial.print("{\"M1VAL\":");
+    Serial.print(voltage_1);
+    Serial.print(",");
+    Serial.print("\"M2VAL\":");
+    Serial.print(voltage_2);
+    Serial.print("}");
 
-  Serial.println();
-  delay(10);
+    Serial.println();
+    delay(10);
+  }
+  else {
+    delay(1000);
+  }
 }
